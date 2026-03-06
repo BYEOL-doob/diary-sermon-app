@@ -100,13 +100,21 @@ function safeJsonParse(value, fallback) {
 }
 
 function loadCache(key) {
-  const raw = window.localStorage.getItem(key);
-  const parsed = safeJsonParse(raw || "{}", {});
-  return parsed && typeof parsed === "object" ? parsed : {};
+  try {
+    const raw = window.localStorage.getItem(key);
+    const parsed = safeJsonParse(raw || "{}", {});
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
 }
 
 function saveCache(key, data) {
-  window.localStorage.setItem(key, JSON.stringify(data));
+  try {
+    window.localStorage.setItem(key, JSON.stringify(data));
+  } catch {
+    // Quota exceeded or storage unavailable: continue without cache.
+  }
 }
 
 function toCacheKey(value) {
@@ -179,7 +187,14 @@ async function getEmbeddingCached(text) {
   const values = await getEmbedding(text);
   if (Array.isArray(values) && values.length > 0) {
     cache[key] = values;
-    saveCache(EMBEDDING_CACHE_KEY, cache);
+    // Keep embedding cache bounded to avoid localStorage quota errors.
+    const entries = Object.entries(cache);
+    if (entries.length > 300) {
+      const trimmed = Object.fromEntries(entries.slice(entries.length - 300));
+      saveCache(EMBEDDING_CACHE_KEY, trimmed);
+    } else {
+      saveCache(EMBEDDING_CACHE_KEY, cache);
+    }
   }
   return values;
 }
