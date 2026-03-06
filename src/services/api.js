@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const SEARCH_BASE_URL = "https://watvmedia.org/ko/search";
-const LOCAL_SERMONS_URL = "/sermons.json";
+const LOCAL_SERMONS_URL = `${import.meta.env.BASE_URL}sermons.json`;
 const EMBEDDING_THRESHOLD = 0.7;
 const MAX_RESULTS = 3;
 const RECOMMEND_CACHE_KEY = "sermonMeaningCacheV1";
